@@ -9,9 +9,12 @@ import numpy as np
 from PIL import Image
 import requests
 import matplotlib.pyplot as plt
-
-from backend.contour_utils import find_contours, arrange_boxes
-import configs as cf
+try:
+    from kie.backend.contour_utils import find_contours, arrange_boxes
+    import configs as cf
+except:
+    from myapp.kie.backend.contour_utils import find_contours, arrange_boxes
+    import myapp.configs as cf
 
 
 class NpEncoder(json.JSONEncoder):

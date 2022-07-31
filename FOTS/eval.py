@@ -35,7 +35,7 @@ def load_model(config ,resume = True):
         else:
             resume_ckpt = None
     if os.path.exists(resume_ckpt):
-        checkpoint = torch.load('epoch=38-step=935.ckpt')
+        checkpoint = torch.load('epoch=38-step=935 (1).ckpt')
         model.load_state_dict(checkpoint)
     return model
 

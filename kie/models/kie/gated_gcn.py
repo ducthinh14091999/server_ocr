@@ -6,9 +6,10 @@ from torch.nn.utils.rnn import pack_padded_sequence
 
 import numpy as np
 
-
-from models.kie.graph_norm import GraphNorm
-
+try:
+    from kie.models.kie.graph_norm import GraphNorm
+except:
+    from myapp.kie.models.kie.graph_norm import GraphNorm
 
 """
     ResGatedGCN: Residual Gated Graph ConvNets

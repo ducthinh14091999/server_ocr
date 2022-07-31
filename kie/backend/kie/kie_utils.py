@@ -1,16 +1,18 @@
 import copy
 import imageio
-
+import os
 import cv2
 import numpy as np
 import torch
 import dgl
-
-import configs as cf
-from models.kie.gated_gcn import GatedGCNNet
-from backend.backend_utils import timer
-
-
+try:
+    from kie.models.kie.gated_gcn import GatedGCNNet
+    from kie.backend.backend_utils import timer
+    import configs as cf
+except:
+    import myapp.configs as cf
+    from myapp.kie.models.kie.gated_gcn import GatedGCNNet
+    from myapp.kie.backend.backend_utils import timer
 def load_gate_gcn_net(device, checkpoint_path):
     net_params = {}
     net_params["in_dim_text"] = len(cf.alphabet)
@@ -127,7 +129,7 @@ def prepare_graph(cells):
 
     boxes, edge_data, text, text_length = prepare_pipeline(
         boxes, edge_data, texts, text_lengths
-    )
+    )#this need to fix it is information about string in each string
     boxes = torch.from_numpy(boxes).float()
     edge_data = torch.from_numpy(edge_data).float()
 

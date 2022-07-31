@@ -1,10 +1,12 @@
 import torch
 from vietocr.tool.config import Cfg
 from vietocr.tool.predictor import Predictor
-
-import configs as cf
-from models.saliency.u2net import U2NETP
-from backend.text_detect.craft_utils import get_detector
+try:
+    import myapp.configs as cf
+except:
+    import configs as cf
+# from kie.models.saliency.u2net import U2NETP
+# from kie.backend.text_detect.craft_utils import get_detector
 
 
 def load_text_detect():

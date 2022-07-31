@@ -5,6 +5,7 @@ from django.http import Http404, HttpResponse, HttpResponsePermanentRedirect
 from django.shortcuts import render,redirect
 from django.core.files.storage import FileSystemStorage
 from .form import UploadFileForm
+from .gnn_mode_prel import gcn_pre
 from django.core.files.images import ImageFile
 import cv2
 from PIL import Image
@@ -36,6 +37,7 @@ def predict_view(request):
             # if len(predict.objects.get(name=request.POST['name']))==1:
             #     Http404('name is exists')
             form.save()
+            ID_card = True
             # height=predict.objects.get(name=request.POST['name']).img_input.height
             # width=predict.objects.get(name=request.POST['name']).img_input.width
             img=predict.objects.get(name=request.POST['name']).img_input
@@ -46,7 +48,12 @@ def predict_view(request):
             # print(height,width)
             # img=cv2.imread('uploads/img.jpg')
             # stri=predict_test(img)
-            ploy, imge, pred = predict_im(img)
+            if (ID_card==True):
+                ploy,pred,batch_scores,imge, string_text = gcn_pre(img)
+                
+            else:
+                ploy, imge, pred = predict_im(img)
+            
             print(imge.shape)
             cv2.imwrite('img_out.jpg',imge)
             output=result.objects
@@ -58,7 +65,7 @@ def predict_view(request):
             imgaa = ImageFile(BytesIO(imgaa.tobytes()), name='img_out.jpg')
             predict.objects.all()[0].delete()
             cv2.imwrite('static/uploads/img1.jpg', imge)
-            stri=''
+            stri=string_text
 
             # print(imge.shape)
             print('all here')
@@ -66,7 +73,7 @@ def predict_view(request):
             
             with open('result.txt','w',encoding='utf-8') as w:
                 w.write(stri)
-            return render(request,'myapp/result.html',{'img':img_object,"output":image_uri})
+            return render(request,'myapp/result.html',{'img':img_object,"output":image_uri, 'string': string_text})
     else:
         form = UploadFileForm()
     return render(request, 'myapp/predict.html', {'form' : form})

@@ -1,0 +1,2 @@
+kie/weights/kie/kie_mcocr.pkl filter=lfs diff=lfs merge=lfs -text
+kie/weights/text_detect/craft_mlt_25k_1.pth filter=lfs diff=lfs merge=lfs -text

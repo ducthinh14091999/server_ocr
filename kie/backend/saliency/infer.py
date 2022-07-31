@@ -4,9 +4,9 @@ import torch
 from torchvision import transforms
 from torch.autograd import Variable
 
-import configs as cf
-from backend.backend_utils import timer
-from backend.saliency.data_loader import SalObjDataset, RescaleT, ToTensorLab, normPRED
+# import configs as cf
+from kie.backend.backend_utils import timer
+from kie.backend.saliency.data_loader import SalObjDataset, RescaleT, ToTensorLab, normPRED
 
 
 @timer

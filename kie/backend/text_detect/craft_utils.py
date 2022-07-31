@@ -7,7 +7,7 @@ from scipy.ndimage import label
 import torch
 import torch.backends.cudnn as cudnn
 
-from models.text_detect.craft import CRAFT
+from kie.models.text_detect.craft import CRAFT
 
 
 def copyStateDict(state_dict):

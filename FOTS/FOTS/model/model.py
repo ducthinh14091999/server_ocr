@@ -125,7 +125,7 @@ class FOTSModel(LightningModule):
                 s = score[i]
                 g = geometry[i]
                 thresh = threshold_otsu(np.uint(s*255))
-                bb = get_boxes(s, g, score_thresh=thresh/255 if thresh/255>0.3 else 0.3)
+                bb = get_boxes(s, g, score_thresh=thresh/255 if thresh/255>0.2 else 0.2)
                 if bb is not None:
                     roi = []
                     for _, gt in enumerate(bb[:, :8].reshape(-1, 4, 2)):

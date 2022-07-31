@@ -81,7 +81,7 @@ def restore_polys(valid_pos, valid_geo, score_shape, scale=4):
     polys = []
     index = []
     valid_pos *= scale
-    d = valid_geo[:4, :] # 4 x N
+    d = valid_geo[:4, :]*0.05 # 4 x N
     angle = valid_geo[4, :] # N,
 
     for i in range(valid_pos.shape[0]):
@@ -99,7 +99,7 @@ def restore_polys(valid_pos, valid_geo, score_shape, scale=4):
         res = np.dot(rotate_mat, coordidates)
         res[0,:] += x
         res[1,:] += y
-
+        print(res)
         if is_valid_poly(res, score_shape, scale):
             index.append(i)
             polys.append([res[0,0], res[1,0], res[0,1], res[1,1], res[0,2], res[1,2],res[0,3], res[1,3]])
