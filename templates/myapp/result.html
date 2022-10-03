@@ -1,11 +1,52 @@
 {% block content %}
-<div >"The string of the input is:"</div>
-<div >{{stri}}</div>
-<div >"here is the input image for model"</div>
+<div>The string of the input is:</div>
+<div>{{stri}}</div>
+<div>here is the input image for model</div>
 <img src="/media/{{img.img_input}}">
-<div >"here is the output image for model"</div>
+<div>here is the output image for model</div>
 <img src="{{output}}">
-<div >"content of image is"</div>
-<div>{{string}}</div>
+<div>content of image is</div>
+{% for str in string %}
+<div>{{str}}</div>
+{% endfor %}
+<div>This is table information of ID card</div>
+<!-- {% for item in query_results %}
+    <tr> 
+        <td>{{ item.field1 }}</td>
+        <td>{{ item.fieldN }}</td>
+    </tr>
+{% endfor %} -->
+<style>
+    table, th, td {
+      border: 1px solid black;
+      border-collapse: collapse;
+    }
+    </style>
+<table>
+
+    <tr>
+        <th>ID</th>
+        <th>name</th>
+        <th>day of birth</th>
+        <th>male/female</th>
+        <th>nationality</th>
+        <th>native place</th>
+        <th>place living</th>
+    <tr>
+        <th>0998765</th>
+        <th>Pham vu duc thinh</th>
+        <th>14/09/2002</th>
+        <th>male</th>
+        <th>viet name</th>
+        <th>bien hoa</th>
+        <th>bien hoa</th>
+    </tr>
+    <tr> 
+        {% for item in type %}
+        <td>{{ item}}</td>
+        {% endfor %}
+    </tr>
+
+</table>
 <a class="navbar-brand" href="">predict page</a>
 {% endblock %}

@@ -10,7 +10,7 @@ import numpy as np
 from sklearn.decomposition import PCA
 import string
 
-keys = string.printable
+keys = string.printable+'ĂÂÁẮẤÀẰẦẢẲẨÃẴẪẠẶẬĐÐÊÉẾÈỀẺỂẼỄẸỆÍÌỈĨỊÔƠÓỐỚÒỒỜỎỔỞÕỖỠỌỘỢƯÚỨÙỪỦỬŨỮỤỰÝỲỶỸỴăâáắấàằầảẳẩãẵẫạặậđêéếèềẻểẽễẹệíìỉĩịôơóốớòồờỏổởõỗỡọộợưúứùừủửũữụựýỳỷỹỵ'
 
 
 def ensure_dir(path):

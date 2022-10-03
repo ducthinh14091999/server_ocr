@@ -70,8 +70,8 @@ class ICDARDataset(Dataset):
         # fold = kfold.split(all_images,zip(all_bboxs,all))
         bboxes = []
         texts = []
-        last_img=pathlib.Path('F:/project_2/New_folder/data/downloads/094343_b.jpg')
-        with open('F:/project_2/New_folder/combile_word.txt','r',encoding='utf-8') as f:
+        last_img=pathlib.Path('F:/project_2/KIE_invoice_minimal/results/crop/67.jpg')
+        with open('F:/FOTS.PyTorch/combine_cccd_collect.txt','r',encoding='utf-8') as f:
             for line in f:
                 text = line.strip('\ufeff').strip('\xef\xbb\xbf').strip('\n').split('*')
                 image = pathlib.Path(text[0])
@@ -140,7 +140,7 @@ class ICDARDataset(Dataset):
         if num_of_words == len(transcripts):
             h, w, _ = im.shape
             text_polys = check_and_validate_polys(text_polys, (h, w))
-            transcripts,text_polys = sort_bbox(transcripts,text_polys)
+            # transcripts,text_polys = sort_bbox(transcripts,text_polys)
             max_tries = 10
             if self.transform:
                 while True and (max_tries != 0):
@@ -149,7 +149,7 @@ class ICDARDataset(Dataset):
                     if len(valid_text_polys) > 0:
                         text_polys = valid_text_polys
                         transcripts = [transcripts[i] for i, polygon in enumerate(text_polys) if polygon.is_fully_within_image(image=im)]
-                        im = transformed_im
+                        im = (transformed_im-127)/128
                         break
                     max_tries -= 1
 

@@ -18,9 +18,9 @@ def load_gate_gcn_net(device, checkpoint_path):
     net_params["in_dim_text"] = len(cf.alphabet)
     net_params["in_dim_node"] = 10
     net_params["in_dim_edge"] = 2
-    net_params["hidden_dim"] = 512
-    net_params["out_dim"] = 384
-    net_params["n_classes"] = 5
+    net_params["hidden_dim"] = 256
+    net_params["out_dim"] = 128
+    net_params["n_classes"] = len(cf.node_labels)
     net_params["in_feat_dropout"] = 0.1
     net_params["dropout"] = 0.0
     net_params["L"] = 4
@@ -36,7 +36,7 @@ def load_gate_gcn_net(device, checkpoint_path):
     checkpoint = torch.load(
         checkpoint_path, map_location=torch.device(cf.device)
     )
-    model.load_state_dict(checkpoint)
+    # model.load_state_dict(checkpoint)
 
     model = model.to(device)
     model.eval()

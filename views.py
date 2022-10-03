@@ -32,6 +32,7 @@ def predict_view(request):
     if request.method == 'POST':
         name=request.FILES['img_input']
         form = UploadFileForm(request.POST, request.FILES)
+        haar = False
         # print(request.POST)
         if form.is_valid():
             # if len(predict.objects.get(name=request.POST['name']))==1:
@@ -44,12 +45,18 @@ def predict_view(request):
             img_object = predict.objects.get(name=request.POST['name'])
             img = Image.open(img).convert('RGB')
             img = np.array(img)
+            if haar:
+                img_orgin, boxes ,img_lists =haar_cascade_extact(img)
+                if len(img_lists)>1:
+                    img = img_lists[0]
             # print(img.shape)
             # print(height,width)
             # img=cv2.imread('uploads/img.jpg')
             # stri=predict_test(img)
+            
+            
             if (ID_card==True):
-                ploy,pred,batch_scores,imge, string_text = gcn_pre(img)
+                ploy,pred,batch_scores,imge, string_text, type = gcn_pre(img)
                 
             else:
                 ploy, imge, pred = predict_im(img)
@@ -72,8 +79,9 @@ def predict_view(request):
             
             
             with open('result.txt','w',encoding='utf-8') as w:
-                w.write(stri)
-            return render(request,'myapp/result.html',{'img':img_object,"output":image_uri, 'string': string_text})
+                for st in stri:
+                    w.write(st)
+            return render(request,'myapp/result.html',{'img':img_object,"output":image_uri, 'string': string_text,'type':type})
     else:
         form = UploadFileForm()
     return render(request, 'myapp/predict.html', {'form' : form})
@@ -101,3 +109,19 @@ def list_img(request):
     'carx':image_item
     }
     return render(request,'myapp/list_img.html',variables)
+def haar_cascade_extact(img):
+    img_origin = img
+    img_cards =[]
+    boxes =[]
+    ID_cascade = cv2.CascadeClassifier("F:/project_2/opencv-haar-classifier-training/classifier1/cascade_.xml")
+    for i in range(4):
+        if i <3 and i >0:
+            img = cv2.rotate(img, i)
+        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        IDcard = ID_cascade.detectMultiScale(gray, 1.1, 2)
+        for (x,y,w,h) in IDcard:
+            # cv2.rectangle(img,(x,y),(int(x+w*1.1),y+h),(255,0,0),2)
+            boxes.append([x,y,w,h])
+            roi_color = img[y:y+h, x:x+w]
+            img_cards.append(roi_color)
+    return img_origin, boxes, img_cards

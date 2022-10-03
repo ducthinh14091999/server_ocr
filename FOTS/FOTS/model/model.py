@@ -62,7 +62,8 @@ class FOTSModel(LightningModule):
                 raise NotImplementedError()
             return dict(optimizer=optimizer, lr_scheduler=lr_scheduler)
 
-    def forward(self, images, boxes=None, rois=None):
+    def forward(self, images, boxes=None, rois=None,compare = True):
+        # compare = False
         if self.training:
             sampled_indices = torch.randperm(rois.size(0))
             sample_ignored=sampled_indices[self.max_transcripts_pre_batch:]
@@ -94,6 +95,44 @@ class FOTSModel(LightningModule):
 
             # rois = rois[sampled_indices]
 
+            label_boxes = boxes
+            label_rois = rois
+
+            score = score_map.detach().cpu().numpy()
+            geometry = geo_map.detach().cpu().numpy()
+            if compare:
+                pred_boxes = []
+                rois = []
+                for i in range(score.shape[0]):
+                    s = score[i]
+                    g = geometry[i]
+                    # thresh = threshold_otsu(np.uint(s*255))
+                    thresh = 0.6*255
+                    bb = get_boxes(s, g, score_thresh=thresh/255 if thresh/255>0.1 else 0.1)
+                    if bb is not None:
+                        roi = []
+                        for _, gt in enumerate(bb[:, :8].reshape(-1, 4, 2)):
+                            rr = cv2.minAreaRect(gt)
+                            center = rr[0]
+                            (w, h) = rr[1]
+                            min_rect_angle = rr[2]
+
+                            if h > w:
+                                min_rect_angle = min_rect_angle + 180
+                                roi.append([i, center[0], center[1], w, h, -min_rect_angle])
+                            else:
+                                roi.append([i, center[0], center[1], h, w, -min_rect_angle])
+
+                        pred_boxes.append(bb[:, :8].reshape(-1, 4, 2))
+                        rois.append(np.stack(roi))
+                rois = torch.as_tensor(np.concatenate(rois), dtype=feature_map.dtype, device=feature_map.device)
+                rois[1:-1] = rois[1:-1]*0.25
+                pred_boxes = torch.as_tensor(pred_boxes[0],dtype=feature_map.dtype, device=feature_map.device)
+                # rois = rois[:300]
+                # pred_boxes = pred_boxes[:300]
+
+
+
             ratios = rois[:, 4] / rois[:, 3]
             maxratio = ratios.max().item()
             pooled_width = np.ceil(self.pooled_height * maxratio).astype(int)
@@ -102,7 +141,8 @@ class FOTSModel(LightningModule):
             lengths = torch.ceil(self.pooled_height * ratios)
 
             pred_mapping = rois[:, 0]
-            pred_boxes = boxes
+            if not compare:
+                pred_boxes = boxes
 
             preds = self.recognizer(roi_features, lengths.cpu())
             preds = preds.permute(1, 0, 2) # B, T, C -> T, B, C
@@ -112,37 +152,40 @@ class FOTSModel(LightningModule):
                         transcripts=(preds, lengths),
                         bboxes=pred_boxes,
                         mapping=pred_mapping,
-                        indices=sampled_indices)
+                        indices=sampled_indices,roi_label = label_rois, label_boxes = label_boxes)
             return data
 
         else:
-            score = score_map.detach().cpu().numpy()
-            geometry = geo_map.detach().cpu().numpy()
+            if boxes is None:
+                score = score_map.detach().cpu().numpy()
+                geometry = geo_map.detach().cpu().numpy()
 
-            pred_boxes = []
-            rois = []
-            for i in range(score.shape[0]):
-                s = score[i]
-                g = geometry[i]
-                thresh = threshold_otsu(np.uint(s*255))
-                bb = get_boxes(s, g, score_thresh=thresh/255 if thresh/255>0.2 else 0.2)
-                if bb is not None:
-                    roi = []
-                    for _, gt in enumerate(bb[:, :8].reshape(-1, 4, 2)):
-                        rr = cv2.minAreaRect(gt)
-                        center = rr[0]
-                        (w, h) = rr[1]
-                        min_rect_angle = rr[2]
+                pred_boxes = []
+                rois = []
+                for i in range(score.shape[0]):
+                    s = score[i]
+                    g = geometry[i]
+                    # thresh = threshold_otsu(np.uint(s*255))
+                    thresh = 0.6*255
+                    bb = get_boxes(s, g, score_thresh=thresh/255 if thresh/255>0.1 else 0.1)
+                    if bb is not None:
+                        roi = []
+                        for _, gt in enumerate(bb[:, :8].reshape(-1, 4, 2)):
+                            rr = cv2.minAreaRect(gt)
+                            center = rr[0]
+                            (w, h) = rr[1]
+                            min_rect_angle = rr[2]
 
-                        if h > w:
-                            min_rect_angle = min_rect_angle + 180
-                            roi.append([i, center[0], center[1], w, h, -min_rect_angle])
-                        else:
-                            roi.append([i, center[0], center[1], h, w, -min_rect_angle])
+                            if h > w:
+                                min_rect_angle = min_rect_angle + 180
+                                roi.append([i, center[0], center[1], w, h, -min_rect_angle])
+                            else:
+                                roi.append([i, center[0], center[1], h, w, -min_rect_angle])
 
-                    pred_boxes.append(bb)
-                    rois.append(np.stack(roi))
-
+                        pred_boxes.append(bb)
+                        rois.append(np.stack(roi))
+            else:
+                pred_boxes = boxes
             if self.mode == 'detection':
 
                 if len(pred_boxes) > 0:
@@ -164,6 +207,7 @@ class FOTSModel(LightningModule):
             if len(rois) > 0:
                 pred_boxes = torch.as_tensor(np.concatenate(pred_boxes), dtype=feature_map.dtype, device=feature_map.device)
                 rois = torch.as_tensor(np.concatenate(rois), dtype=feature_map.dtype, device=feature_map.device)
+                rois[1:-1] = rois[1:-1]*0.25
                 pred_mapping = rois[:, 0]
 
                 ratios = rois[:, 4] / rois[:, 3]

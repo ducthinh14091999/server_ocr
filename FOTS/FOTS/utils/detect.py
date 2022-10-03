@@ -81,7 +81,7 @@ def restore_polys(valid_pos, valid_geo, score_shape, scale=4):
     polys = []
     index = []
     valid_pos *= scale
-    d = valid_geo[:4, :]*0.05 # 4 x N
+    d = valid_geo[:4, :] # 4 x N
     angle = valid_geo[4, :] # N,
 
     for i in range(valid_pos.shape[0]):
@@ -99,14 +99,14 @@ def restore_polys(valid_pos, valid_geo, score_shape, scale=4):
         res = np.dot(rotate_mat, coordidates)
         res[0,:] += x
         res[1,:] += y
-        print(res)
+        # print(res)
         if is_valid_poly(res, score_shape, scale):
             index.append(i)
             polys.append([res[0,0], res[1,0], res[0,1], res[1,1], res[0,2], res[1,2],res[0,3], res[1,3]])
     return np.array(polys), index
 
 
-def get_boxes(score, geo, score_thresh=0.6, nms_thresh=0.1):
+def get_boxes(score, geo, score_thresh=0.6, nms_thresh=0.2):
     '''get boxes from feature map
     Input:
         score       : score map from model <numpy.ndarray, (1,row,col)>
@@ -116,7 +116,7 @@ def get_boxes(score, geo, score_thresh=0.6, nms_thresh=0.1):
     Output:
         boxes       : final polys <numpy.ndarray, (n,9)>
     '''
-    debug=True
+    debug=False
     score = score[0,:,:]
     xy_text = np.argwhere(score > score_thresh) # n x 2, format is [r, c]
     if xy_text.size == 0:
@@ -147,8 +147,8 @@ def get_boxes(score, geo, score_thresh=0.6, nms_thresh=0.1):
             [np.array([[boxes[id,0],boxes[id,1]],[boxes[id,2],boxes[id,3]]
             ,[boxes[id,4],boxes[id,5]],[boxes[id,6],boxes[id,7]]],np.int32)],
             True,color= [0,255,0],thickness= 3)
-        # plt.imshow(img_debug)
-        # plt.show()
+        plt.imshow(img_debug)
+        plt.show()
     return boxes
 
 

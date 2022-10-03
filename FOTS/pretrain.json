@@ -6,9 +6,9 @@
     ],
     "precision": 32,
     "backbone_weights": "F:/FOTS.PyTorch/vision-main",
-    "pretrain": "F:/FOTS.PyTorch/epoch=4424-step=4969.ckpt",
+    "pretrain": "F:/FOTS.PyTorch/epoch=38-step=935_22_9.ckpt",
     "data_loader":{
-        "dataset": "synth800k",
+        "dataset": "ICDAR2015",
         "data_dir": "F:/project_2/SynthText-master/results",
         "batch_size": 2,
         "shuffle": true,

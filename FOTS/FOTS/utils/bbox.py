@@ -105,7 +105,7 @@ class Toolbox:
         # xuan zhuan tu pian
 
         n = len(box_List)
-        c = 0;
+        c = 0
         angle = 0
         for i in range(n):
             box = box_List[i]
@@ -302,6 +302,7 @@ class Toolbox:
         h, w, _ = im.shape
         im_resized = cv2.resize(im, dsize=(640, 640))
 
+        im_resized = (im_resized-127)/128
         ratio_w = w / 640
         ratio_h = h / 640
 
@@ -331,9 +332,9 @@ class Toolbox:
 
             for box in boxes:
                 box = Toolbox.sort_poly(box.cpu().numpy().astype(np.int32))
-                if np.linalg.norm(box[0] - box[1]) < 5 or np.linalg.norm(box[3] - box[0]) < 5:
-                    print('wrong direction')
-                    continue
+                # if np.linalg.norm(box[0] - box[1]) < 5 or np.linalg.norm(box[3] - box[0]) < 5:
+                #     print('wrong direction')
+                #     continue
                 poly = np.array([[box[0, 0], box[0, 1]], [box[1, 0], box[1, 1]], [box[2, 0], box[2, 1]],
                                  [box[3, 0], box[3, 1]]])
                 polys.append(poly)
@@ -344,7 +345,6 @@ class Toolbox:
                 if with_img:
                     cv2.polylines(im[:, :, ::-1], [box.astype(np.int32).reshape((-1, 1, 2))], True,
                                   color=(255, 255, 0), thickness=2)
-
         if output_dir:
             img_path = output_dir / im_fn.name
             # cv2.imwrite(img_path.as_posix(), im[:, :, ::-1])
