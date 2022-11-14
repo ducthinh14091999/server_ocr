@@ -300,21 +300,27 @@ class Toolbox:
         #im_resized, (ratio_h, ratio_w) = Toolbox.resize_image(im)
 
         h, w, _ = im.shape
+        img =[]
         im_resized = cv2.resize(im, dsize=(640, 640))
-
-        im_resized = (im_resized-127)/128
+        
+        # im_resized = (im_resized-127)/128
         ratio_w = w / 640
         ratio_h = h / 640
 
         im_resized = datautils.normalize_iamge(im_resized)
 
-        im_resized = torch.from_numpy(im_resized).float()
+        # im_resized = torch.from_numpy(im_resized).float()
+        
+
+        # im_resized = im_resized.unsqueeze(0)
+        # im_resized = im_resized.permute(0, 3, 1, 2)
+        if im_resized is not None:
+            a = torch.from_numpy(im_resized)
+            a = a.permute(2, 0, 1)
+            img.append(a)
+        im_resized = torch.stack(img, 0).float()
         if with_gpu:
             im_resized = im_resized.to('cuda:0')
-
-        im_resized = im_resized.unsqueeze(0)
-        im_resized = im_resized.permute(0, 3, 1, 2)
-
         output = model.forward(im_resized, None, None)
 
         score = output['score_maps']

@@ -1,7 +1,7 @@
 
 
 from pickletools import optimize
-
+from myapp.knn_class import knn_classify
 import cv2
 from myapp.FOTS.FOTS.utils.bbox import Toolbox
 import torch
@@ -151,7 +151,7 @@ device= cf.device
 #util function
 ################################################################3
 
-
+classify = knn_classify()
 
 
 def prepare_data(boxes,pre):
@@ -240,13 +240,13 @@ def sort_boundingbox(boxes = None, polys = None, text_label= None):
         len_ = len(numerical_order)-1
         for i in range(len_):
             for j in range(len_):
-                if texts_concat_bboxs[0][j][1]>texts_concat_bboxs[0][j+1][1]:
+                if texts_concat_bboxs[0][numerical_order[j]][1]>texts_concat_bboxs[0][numerical_order[j+1]][1]:
                     temp = numerical_order[j+1]
                     numerical_order[j+1] = numerical_order[j]
                     numerical_order[j] = temp
         
         for j in range(len(texts_concat_bboxs[0])-1):
-            if texts_concat_bboxs[0][j+1][1]-5<texts_concat_bboxs[0][j][7]:
+            if texts_concat_bboxs[0][numerical_order[j+1]][1]<texts_concat_bboxs[0][numerical_order[j]][7]:
                 line_index[j+1] = line_index[j]
             else:
                 line_index[j+1] = line_index[j]+1
@@ -283,7 +283,7 @@ def sort_boundingbox(boxes = None, polys = None, text_label= None):
 
         
         for j in range(len_):
-            if texts_concat_bboxs[0][numerical_order[j+1]][0,1]<texts_concat_bboxs[0][numerical_order[j]][3,1]:
+            if texts_concat_bboxs[0][numerical_order[j+1]][0,1]+5<texts_concat_bboxs[0][numerical_order[j]][3,1]:
                 line_index[j+1] = line_index[j]
             else:
                 line_index[j+1] = line_index[j]+1
@@ -332,15 +332,22 @@ def is_left_of_word(box1,box2,follow_height= False):
 gcn_net,detector= load_model()
 
 def extract_each(score,text):
-    type =[[] for i in range(7)]
-    title_word =[['ID'],['ho','va','ten','name'],['ngay', 'sinh', 'day','of','birth'],['giới','tính','sex'],['quốc','tịch','nationality'],['quê','quán','place','of','origin'],['nơi','thường','trú','place','of','residence'] ]
+    type =[[] for i in range(9)]
+    title_word =[['có','thới','hạn'],\
+        ['cong','hoa','xa','hoi','chu','nghia','viet','nam'],\
+        ['ID'],['Họ','và','tên','Full','name'],\
+        ['Ngày', 'sinh', 'Date','of','birth'],['Giới','tính','sex'],\
+        ['Quốc','tịch','nationality'],\
+        ['Quê','quán','Place','of','origin'],\
+        ['Nơi','thường','trú','Place','of','residence'] ]
     for i in range(score.shape[0]):
-        type_str = np.argmax(score[i])
+        type_str = score[i]+1
+        # type_str = np.argmax(score[i])
         if type_str >1:
             if text[i] in title_word[type_str]:
                 continue
             else:
-                type[type_str].append(text)
+                type[type_str-2].append(text[i])
     return type
 # training model
 def gcn_pre(img):
@@ -354,10 +361,20 @@ def gcn_pre(img):
     decoder_ctc =  GreedyCTCDecoder(keys+'  ',root)
     texts=[]
     polys = []
-    booxes = ploy
     w,h = imge.shape[:2]
     ratio_w = w / 640
     ratio_h = h / 640
+    pred_ = [[pred[0][:,id],pred[1][id]] for id in range(len(pred[1]))]
+    ploy,transcripss,line_index,numerical_order = sort_boundingbox(boxes = ploy, polys = None, text_label= pred_)
+    booxes = ploy
+
+
+    pre_box = np.array(ploy[:,:8]).reshape(-1,8).astype(float)
+    pre_box[:,0::2]= pre_box[:,0::2] /(h/3)
+    pre_box[:,1::2] = pre_box[:,1::2]/ (w)
+    
+    pre_class = classify.predict(pre_box)
+
     if (booxes is not None) and (len(booxes)>0):
         boxes = booxes[:, :8].reshape((-1, 4, 2))
         boxes= boxes.astype(float)
@@ -365,7 +382,7 @@ def gcn_pre(img):
         # boxes[:, :, 0] *= ratio_w
         # boxes[:, :, 1] *= ratio_h
         boxes= boxes.astype(int)
-        for box in boxes:
+        for id,box in enumerate(boxes):
             box = Toolbox.sort_poly(box.astype(np.int32))
            
             if np.linalg.norm(box[0] - box[1]) < 5 or np.linalg.norm(box[3] - box[0]) < 5:
@@ -384,13 +401,14 @@ def gcn_pre(img):
             # cv2.rectangle(imge,(label_box[0,0],label_box[0,1]),(label_box[2,0],label_box[2,1]),(0, 0, 255), thickness= 3, lineType=cv2.LINE_8)
 
             cv2.rectangle(imge,(box[0,0],box[0,1]),(box[2,0],box[2,1]),(0, 255, 0), thickness= 3, lineType=cv2.LINE_8) 
-    pred_ = [[pred[0][:,id],pred[1][id]] for id in range(len(pred[1]))]
-    ploy,transcripss,line_index,numerical_order = sort_boundingbox(boxes = ploy, polys = None, text_label= pred_)
+            cv2.putText(imge,str(pre_class[id]),(box[0,0],box[0,1]),cv2.FONT_HERSHEY_SIMPLEX,0.3,(255,0,0),1,cv2.LINE_AA)
+    
+    
     string_text = ''
     content_line = ['' for i in range(max(line_index)+1)]
     text_str = []
     for id in range(pred[0].shape[1]):
-        str_text,index = decoder_ctc.forward(torch.tensor(pred[0][:,id,:]),to_string=True)
+        str_text,index = decoder_ctc.forward(torch.tensor(pred[0][:,numerical_order[id],:]),to_string=True)
         content_line[line_index[id]] += ' '+str_text.strip(' ')
         text_str.append(str_text)
         texts.append(index)
@@ -430,7 +448,9 @@ def gcn_pre(img):
         graph_node_size,
         graph_edge_size,
     )
-    type = extract_each(batch_scores.detach().numpy(),text_str)
+    # type = extract_each(batch_scores.detach().numpy(),text_str)
+    type = extract_each(pre_class,text_str)
+    type = [' '.join(i) for i in type]
     return ploy,pred,batch_scores,imge, content_line, type
 if __name__ == "__main__":
     img= cv2.imread("F:/project_2/New_folder/data/downloads/094343_b.jpg")

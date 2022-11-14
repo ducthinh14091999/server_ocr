@@ -57,10 +57,11 @@ class Transform:
             color_jitter = iaa.Sometimes(p=self.color_jitter_prob,
                                          then_list=color_jitter)
 
-            augs = [resize,
-                    rotate,
-                    resize_height,
-                    crop,
+            augs = [
+                    # resize,
+                    # rotate,
+                    # resize_height,
+                    # crop,
                     fix_resize,
                     blur,
                     color_jitter]

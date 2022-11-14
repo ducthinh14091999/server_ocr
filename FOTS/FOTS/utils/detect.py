@@ -118,14 +118,20 @@ def get_boxes(score, geo, score_thresh=0.6, nms_thresh=0.2):
     '''
     debug=False
     score = score[0,:,:]
+    min_thresh = 0.3
+    xy_non_text = np.argwhere((score < score_thresh) & (score > min_thresh))
     xy_text = np.argwhere(score > score_thresh) # n x 2, format is [r, c]
     if xy_text.size == 0:
         return None
 
     xy_text = xy_text[np.argsort(xy_text[:, 0])]
+    xy_non_text = xy_non_text[np.argsort(xy_non_text[:, 0])]
     valid_pos = xy_text[:, ::-1].copy() # n x 2, [x, y]
+    valid_non_pos = xy_non_text[:, ::-1].copy()
     valid_geo = geo[:, xy_text[:, 0], xy_text[:, 1]] # 5 x n
+    valid_non_geo = geo[:, xy_non_text[:, 0], xy_non_text[:, 1]]
     polys_restored, index = restore_polys(valid_pos, valid_geo, score.shape)
+    polys_non, index_non = restore_polys(valid_non_pos, valid_non_geo, score.shape)
     if polys_restored.size == 0:
         return None
 
@@ -133,6 +139,12 @@ def get_boxes(score, geo, score_thresh=0.6, nms_thresh=0.2):
     boxes[:, :8] = polys_restored
     boxes[:, 8] = score[xy_text[index, 0], xy_text[index, 1]]
     boxes = lanms.merge_quadrangle_n9(boxes.astype('float32'), nms_thresh)
+
+    non_boxes = np.zeros((polys_non.shape[0], 9), dtype=np.float32)
+    non_boxes[:, :8] = polys_non
+    non_boxes[:, 8] = score[xy_text[index_non, 0], xy_text[index_non, 1]]
+    non_boxes = lanms.merge_quadrangle_n9(non_boxes.astype('float32'), nms_thresh)
+
     if debug:
         img_debug = np.zeros((160,160,3), dtype=np.float32)
         for id,i in enumerate(index[:len(boxes)]):
@@ -149,7 +161,7 @@ def get_boxes(score, geo, score_thresh=0.6, nms_thresh=0.2):
             True,color= [0,255,0],thickness= 3)
         plt.imshow(img_debug)
         plt.show()
-    return boxes
+    return boxes,non_boxes
 
 
 def adjust_ratio(boxes, ratio_w, ratio_h):

@@ -26,7 +26,7 @@ from FOTS.FOTS.data_loader.data_module import SynthTextDataModule, ICDARDataModu
 from pytorch_lightning.callbacks import Callback
 import torch.optim as optim
 cross_valid = True
-data_train = False
+data_train = True
 class GreedyCTCDecoder(torch.nn.Module):
     def __init__(self, labels,blank=0):
         super().__init__()
@@ -62,7 +62,7 @@ class GreedyCTCDecoder(torch.nn.Module):
                 final += st
             last = st
         final = final.strip(' ')
-        # print(final)
+        print(final)
         if to_string:
             return final
         else:
@@ -113,9 +113,9 @@ def sort_boundingbox(boxes = None, polys = None, text_label= None):
                 line_index[j+1] = line_index[j]
             else:
                 line_index[j+1] = line_index[j]+1
-            if len(texts_concat_bboxs[1][numerical_order[j]][0].shape)==1:
-                a= [keyss[inde-1] for inde in texts_concat_bboxs[1][numerical_order[j]][0]]
-                print(''.join(a).strip(' '))
+            # if len(texts_concat_bboxs[1][numerical_order[j]][0].shape)==1:
+            #     a= [keyss[inde-1] for inde in texts_concat_bboxs[1][numerical_order[j]][0]]
+            #     print(''.join(a).strip(' '))
         max_line = max(line_index)
         for line_num in range(1,max_line+1):
             index_same_l = [id for id,k in enumerate(line_index) if k== line_num]
@@ -150,6 +150,8 @@ def is_left_of_word(box1,box2,follow_height= False):
             return True
         else:
             return False
+
+
 
 def main(config, resume: bool):
     loss_model = FOTSLoss(config)
@@ -238,19 +240,16 @@ def main(config, resume: bool):
             #     transcrips[1]=transcrips[1][outputs["indices"]]
             #     transcrips[0]=transcrips[0][outputs["indices"]]
             #     pass
-            # loss_dict = loss_model(score_map,outputs['score_maps'],geo_map,outputs['geo_maps'],transcrips,outputs['transcripts'],training_marks)
-            # loss = loss_dict['reg_loss'] + loss_dict['cls_loss'] + loss_dict['recog_loss']
-            # print(loss_dict)
+            loss_dict = loss_model(score_map,outputs['score_maps'],geo_map,outputs['geo_maps'],transcrips,outputs['transcripts'],training_marks)
+            loss = loss_dict['reg_loss'] + loss_dict['cls_loss'] + loss_dict['recog_loss']
             polys = []
             label_polys =[]
-            
+            # outputs['bboxes'],transcripss,line_index= sort_boundingbox(boxes = None, polys = outputs['bboxes'].cpu().numpy(), text_label= [[outputs['transcripts'][0][i],outputs['transcripts'][1][i]] for i in range(outputs['transcripts'][0].shape[1]) ])
             transcr = [[transcrips[0][i],transcrips[1][i]] for i in range(len(transcrips[1]))] 
-            pre_transcr = [[outputs['transcripts'][0][:,i],outputs['transcripts'][1][i]] for i in range(len(outputs['transcripts'][1]))]
-            outputs['bboxes'],pre_transcr,line_index_pre, numerical_order_pre= sort_boundingbox(boxes = None, polys = outputs['bboxes'].cpu().numpy(), text_label= pre_transcr)
-            outputs['label_boxes'],transcripss,line_index,numerical_order= sort_boundingbox(boxes = None, polys = outputs['label_boxes'].cpu().numpy(), text_label=transcr )
+            outputs['bboxes'],transcripss,line_index,numerical_order= sort_boundingbox(boxes = None, polys = outputs['bboxes'].cpu().numpy(), text_label=transcr )
             
             if data_train:
-                booxes = bboxes[numerical_order]
+                booxes = bboxes
             else:
                 
                 booxes = outputs['bboxes']
@@ -258,11 +257,11 @@ def main(config, resume: bool):
                 boxes = booxes[:, :8].reshape((-1, 4, 2))
                 boxes[:, :, 0] *= ratio_w
                 boxes[:, :, 1] *= ratio_h
-                label_boxes = outputs['label_boxes']
+                label_boxes = outputs['label_boxes'].cpu().numpy()  
                 label_boxes[:, :, 0] *= ratio_w
                 label_boxes[:, :, 1] *= ratio_h
                 for box,label_box in zip(boxes,label_boxes):
-                    box = Toolbox.sort_poly(box.astype(np.int32))
+                    box = Toolbox.sort_poly(box.cpu().numpy().astype(np.int32))
                     label_box = Toolbox.sort_poly(label_box.astype(np.int32))
                     if np.linalg.norm(box[0] - box[1]) < 5 or np.linalg.norm(box[3] - box[0]) < 5:
                         print('wrong direction')
@@ -276,18 +275,19 @@ def main(config, resume: bool):
                         poly = poly[(0, 3, 2, 1), :]
 
                     # if with_img:
+                    # cv2.rectangle(img,[label_box[0,0],label_box[0,1]],[label_box[2,0],label_box[2,1]],(0, 0, 255), thickness= 3, lineType=cv2.LINE_8)
+
                     cv2.rectangle(img,(label_box[0,0],label_box[0,1]),(label_box[2,0],label_box[2,1]),(0, 0, 255), thickness= 3, lineType=cv2.LINE_8)
 
-                    cv2.rectangle(img,(box[0,0],box[0,1]),(box[2,0],box[2,1]),(0, 255, 0), thickness= 3, lineType=cv2.LINE_8)        
-
+                    cv2.rectangle(img,(box[0,0],box[0,1]),(box[2,0],box[2,1]),(0, 255, 0), thickness= 3, lineType=cv2.LINE_8) 
                 plt.imshow(img)
                 plt.show()
 
             
             string_text = ''
             content_line = ['' for i in range(max(line_index)+1)]
-            for id in range(outputs['transcripts'][0].shape[1]-1):
-                result_text_ = outputs['transcripts'][0][:,numerical_order_pre[id]] #nn.Softmax(dim=1)
+            for id in range(outputs['transcripts'][0].shape[1]):
+                result_text_ = outputs['transcripts'][0][id] #nn.Softmax(dim=1)
                 result_text = transcripss[id][0]
                 # plt.imshow(result_text.data.cpu().numpy().transpose())
                 # plt.show()
@@ -299,21 +299,14 @@ def main(config, resume: bool):
                 label_text =''.join(result)
                 content_line[line_index[id]] += ' '+label_text.strip(' ')
                 if np.min(polys[id]) >0 and (polys[id][2,1]-polys[id][0,1])>0 and (polys[id][2,0]-polys[id][0,0])>0:
-                    
-                    iou = intersection(label_boxes[id], boxes[id])
-                    print(iou)
+                    plt.imshow(img[polys[id][0,1]:polys[id][2,1],polys[id][0,0]:polys[id][2,0],:])
+                    plt.title('predict_text'+str_text)
+                    print(intersection(label_boxes[id], boxes[id]))
                     # plt.rcParams["figure.figsize"] = (2,20)
-                    if iou <0.3:
-                        print(id)
-                        print(polys[id],label_polys[id])
-                        plt.imshow(img[polys[id][0,1]:polys[id][2,1],polys[id][0,0]:polys[id][2,0],:])
-                        plt.title('predict_text '+str_text)
-                        plt.show()
-                        plt.imshow(img[label_polys[id][0,1]:label_polys[id][2,1],label_polys[id][0,0]:label_polys[id][2,0],:])
-                        plt.title('label'+' '+label_text)
-                        plt.show()
-
-                        print(str_text.strip(' '),label_text.strip(' '))
+                    plt.show()
+                    plt.imshow(img[label_polys[id][0,1]:label_polys[id][2,1],label_polys[id][0,0]:label_polys[id][2,0],:])
+                    plt.title('label'+' '+label_text)
+                    plt.show()
                     string_text += str_text
                     string_text += ' '
             print(string_text)

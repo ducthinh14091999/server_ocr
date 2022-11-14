@@ -69,8 +69,8 @@ class FOTSModel(LightningModule):
             sample_ignored=sampled_indices[self.max_transcripts_pre_batch:]
             sampled_indices= sampled_indices[:self.max_transcripts_pre_batch]
             non_rois= rois[sample_ignored]
-            rois = rois[sampled_indices]
-            images= remove_non_use_roi(images,non_rois)
+            # rois = rois[sampled_indices]
+            # images= remove_non_use_roi(images,non_rois)
         feature_map = self.sharedConv.forward(images)
 
         score_map, geo_map = self.detector(feature_map)

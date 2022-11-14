@@ -18,11 +18,11 @@ def load_gate_gcn_net(device, checkpoint_path):
     net_params["in_dim_text"] = len(cf.alphabet)
     net_params["in_dim_node"] = 10
     net_params["in_dim_edge"] = 2
-    net_params["hidden_dim"] = 256
-    net_params["out_dim"] = 128
+    net_params["hidden_dim"] = 128
+    net_params["out_dim"] = 64
     net_params["n_classes"] = len(cf.node_labels)
     net_params["in_feat_dropout"] = 0.1
-    net_params["dropout"] = 0.0
+    net_params["dropout"] = 0.3
     net_params["L"] = 4
     net_params["readout"] = True
     net_params["graph_norm"] = True
@@ -76,10 +76,10 @@ def prepare_data(cells, text_key="vietocr_text"):
 
 
 def prepare_pipeline(boxes, edge_data, text, text_length):
-    box_min = boxes.min(0)
-    box_max = boxes.max(0)
+    box_min = boxes[:,:8].min(0)
+    box_max = boxes[:,:8].max(0)
 
-    boxes = (boxes - box_min) / (box_max - box_min)
+    boxes[:,:8] = (boxes[:,:8] - box_min) / (box_max - box_min)
     boxes = (boxes - 0.5) / 0.5
 
     edge_min = edge_data.min(0)

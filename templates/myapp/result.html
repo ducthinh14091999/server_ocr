@@ -1,15 +1,25 @@
 {% block content %}
-<div>The string of the input is:</div>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+img {
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+  }
+</style>
+</head>
+
+<div style="background-color:rgb(0, 229, 255);color:white;padding:5px;">The string of the input is:</div>
 <div>{{stri}}</div>
-<div>here is the input image for model</div>
-<img src="/media/{{img.img_input}}">
-<div>here is the output image for model</div>
-<img src="{{output}}">
-<div>content of image is</div>
+<div style="color:Red;font-weight:bold;padding:5px;">Here is the input image for model</div>
+<img src="/media/{{img.img_input}}" style="width:50%;">
+<div style="color:Red;font-weight:bold;padding:5px;">Here is the output image for model</div>
+<img src="{{output}}" style="width:50%;">
+<div style="color:Red;font-weight:bold;padding:5px;">Content of image is</div>
 {% for str in string %}
 <div>{{str}}</div>
 {% endfor %}
-<div>This is table information of ID card</div>
+<div style="color:Red;font-weight:bold;">This is table information of ID card</div>
 <!-- {% for item in query_results %}
     <tr> 
         <td>{{ item.field1 }}</td>

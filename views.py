@@ -54,7 +54,7 @@ def predict_view(request):
             # img=cv2.imread('uploads/img.jpg')
             # stri=predict_test(img)
             
-            
+            h,w = img.shape[:2]
             if (ID_card==True):
                 ploy,pred,batch_scores,imge, string_text, type = gcn_pre(img)
                 
