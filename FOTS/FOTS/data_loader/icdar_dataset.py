@@ -149,7 +149,8 @@ class ICDARDataset(Dataset):
                     if len(valid_text_polys) > 0:
                         text_polys = valid_text_polys
                         transcripts = [transcripts[i] for i, polygon in enumerate(text_polys) if polygon.is_fully_within_image(image=im)]
-                        im = (transformed_im-127)/128
+                        # im = (transformed_im-127)/128
+                        im = transformed_im
                         break
                     max_tries -= 1
 

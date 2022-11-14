@@ -197,6 +197,10 @@ def main(config, resume: bool):
       if os.path.exists(resume_ckpt):
           checkpoint = torch.load(resume_ckpt)
           model.load_state_dict(checkpoint)
+    for name, child in model.named_children():
+        if name != "recognizer":
+            for param in child.parameters():
+                param.requires_grad = False
     decoder_ctc =  GreedyCTCDecoder(keys,blank= 236)
     
     is_training = True
@@ -278,7 +282,7 @@ def main(config, resume: bool):
                     # if with_img:
                     cv2.rectangle(img,(label_box[0,0],label_box[0,1]),(label_box[2,0],label_box[2,1]),(0, 0, 255), thickness= 3, lineType=cv2.LINE_8)
 
-                    cv2.rectangle(img,(box[0,0],box[0,1]),(box[2,0],box[2,1]),(0, 255, 0), thickness= 3, lineType=cv2.LINE_8)        
+                    cv2.rectangle(img,(box[0,0],box[0,1]),(box[2,0],box[2,1]),(255, 0, 0), thickness= 3, lineType=cv2.LINE_8)        
 
                 plt.imshow(img)
                 plt.show()
@@ -303,17 +307,17 @@ def main(config, resume: bool):
                     iou = intersection(label_boxes[id], boxes[id])
                     print(iou)
                     # plt.rcParams["figure.figsize"] = (2,20)
-                    if iou <0.3:
-                        print(id)
-                        print(polys[id],label_polys[id])
-                        plt.imshow(img[polys[id][0,1]:polys[id][2,1],polys[id][0,0]:polys[id][2,0],:])
-                        plt.title('predict_text '+str_text)
-                        plt.show()
-                        plt.imshow(img[label_polys[id][0,1]:label_polys[id][2,1],label_polys[id][0,0]:label_polys[id][2,0],:])
-                        plt.title('label'+' '+label_text)
-                        plt.show()
+                    # if iou <0.3:
+                    #     print(id)
+                    #     print(polys[id],label_polys[id])
+                    #     plt.imshow(img[polys[id][0,1]:polys[id][2,1],polys[id][0,0]:polys[id][2,0],:])
+                    #     plt.title('predict_text '+str_text)
+                    #     plt.show()
+                    #     plt.imshow(img[label_polys[id][0,1]:label_polys[id][2,1],label_polys[id][0,0]:label_polys[id][2,0],:])
+                    #     plt.title('label'+' '+label_text)
+                    #     plt.show()
 
-                        print(str_text.strip(' '),label_text.strip(' '))
+                    #     print(str_text.strip(' '),label_text.strip(' '))
                     string_text += str_text
                     string_text += ' '
             print(string_text)
